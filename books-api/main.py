@@ -1,7 +1,10 @@
 import json
+import uuid
 from fastapi import FastAPI
 import logging
 from typing import List ,Dict,Any
+from pydantic import BaseModel, Field
+
 
 logging.basicConfig(level=logging.INFO,format='%(asctime)s  - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -11,6 +14,26 @@ DATA_FILE = "data/books-data.json"
 # Use a simple in-memory list to store data loaded from the file
 # This will be reloaded on server restart, but works for the CRUD demo.
 books_db: List[Dict[str, Any]] = []
+
+
+# Pydantic Models for Data Validation (Including Nested Object) ---
+
+# Nested Model: Defines the structure of the Author
+class Author(BaseModel):
+    name: str = Field(min_length=3, description="The full name of the author.")
+    country: str = Field(min_length=2, max_length=50, description="The author's country of origin.")
+
+# Base Model for creating or updating a Book
+class BookBase(BaseModel):
+    title: str = Field(min_length=1, description="The title of the book.")
+    year: int = Field(gt=1980, lt=2025, description="The publication year of the book.")
+    # Nested Pydantic model
+    author: Author
+
+# Response Model: Includes the required ID field for retrieval
+class Book(BookBase):
+    # UUID is generated internally, but must be returned in the response
+    id: uuid.UUID = Field(description="The unique identifier for the book.")
 
 
 # File Handling Functions (Simulating Database I/O) ---
